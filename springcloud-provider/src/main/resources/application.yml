@@ -1,10 +1,6 @@
 server:
   port: 8763
 
-spring:
-  application:
-    name: service-hi
-
 eureka:
   client:
     serviceUrl:
@@ -12,3 +8,15 @@ eureka:
   instance:
     lease-renewal-interval-in-seconds: 1
     lease-expiration-duration-in-seconds: 2
+
+spring:
+  application:
+    name: service-hi
+
+  datasource:
+    driverClassName: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/training?ServerTimezone=HongKong&useUnicode=true&characterEncoding=utf-8
+    username: root
+    password: root
+mybatis:
+  mapper-locations: classpath:mapper/*.xml

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Title</title>
+    <!-- 引入jquery的js文件 -->
+    <script src="../js/jquery-1.9.1.min.js"></script>
+    <!-- 引入bootstrap的js文件和css文件 -->
+    <link rel="stylesheet" href="../js/bootstrap3/css/bootstrap.css">
+    <script src="../js/bootstrap3/js/bootstrap.js"></script>
+    <!-- 引入表格的组件 -->
+    <link rel="stylesheet" href="../js/bootstrap-table/bootstrap-table.css">
+    <script src="../js/bootstrap-table/bootstrap-table.js"></script>
+    <script src="../js/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- 引入弹框 -->
+    <script src="../js/bootstrap-bootbox/bootbox.js"></script>
+    <!-- 引入日期插件 -->
+    <link rel="stylesheet" href="../js/bootstrap-datetimepicker/css/bootstrap-datetimepicker.css">
+    <script src="../js/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js"></script>
+    <script src="../js/bootstrap-datetimepicker/js/locales/bootstrap-datetimepicker.zh-CN.js"></script>
+    <!-- 引入地区二级联动插件 -->
+    <script src="/js/area.js"></script>
+    <!-- 引入上传文件的插件 -->
+    <link rel="stylesheet" href="../js/bootstrap-fileinput/css/fileinput.css">
+    <script src="../js/bootstrap-fileinput/js/fileinput.js"></script>
+    <script src="../js/bootstrap-fileinput/js/locales/zh.js"></script>
+</head>
+<body>
+    <!-- 条查 -->
+    <div id="toolbar">
+        <form class="form-inline">
+            <div class="form-group">
+                <label for="selectName">用户名：</label>
+                <input type="text" class="form-control" id="selectName" placeholder="请输入用户名">
+                <button onclick="searchBook()" type="button" class="btn btn-primary glyphicon glyphicon-search">搜索</button>
+            </div>
+            <div>
+                <button onclick="openAddDialog()" type="button" class="btn btn-primary glyphicon glyphicon-plus">新增</button>
+                <button onclick="deleteAll()" type="button" class="btn btn-danger glyphicon glyphicon-trash">批量删除</button>
+            </div>
+        </form>
+    </div>
+    <!-- 表格在页面中的位置 -->
+    <table class="table" id="bookTable"></table>
+</body>
+<script type="text/javascript">
+    $(function() {
+        initBookTable();
+    })
+    //初始化用户列表
+    function initBookTable() {
+        //列表展示
+        $('#bookTable').bootstrapTable({
+            toolbar:'#toolbar',
+            url:'../book/queryBook',//获取数据地址
+            pagination:true, //是否展示分页
+            pageList:[2, 5, 10, 50],//分页组件
+            pageNumber:1,
+            pageSize:5,//默认每页条数
+            sidePagination:'server',//分页方式：client客户端分页，server服务端分页（*
+            striped:true,
+            queryParams:function(){
+                return {
+                    page: this.pageNumber,
+                    rows: this.pageSize
+                    // bookName: $("#selectName").val()
+                };
+            },
+            columns:[
+                {field:'123',checkbox:true},
+                {field:'bookId',title:'编号'},
+                {field:'bookName',title:'图书名称'},
+                {field:'bookPrice',title:'图书价格'},
+                {field:'bookDate',title:'出版时间'},
+                {field:'456',title:'操作',formatter:function(value,row,index){
+                        var html="<a href='javascript:editUser("+row.bookId+")'>修改</a>|";
+                        html+="<a href='javascript:deleteBook("+row.bookId+")'>删除</a>";
+                        return html;
+                }}
+            ]
+        });
+    }
+
+    //条查
+    function searchBook() {
+        $("#bookTable").bootstrapTable("refresh");
+    }
+
+    //打开新增弹框
+    var res;
+    function createAddContent(url){
+        $.ajax({
+            url:url,
+            async:false,
+            success:function(data){
+                res = data;
+            }
+        });
+        return res;
+    }
+    //打开新增弹框
+    function openAddDialog(){
+        bootbox.dialog({
+            title:'添加图书',
+            message: createAddContent("../page/toAddBookPage"),
+            closeButton: true,
+            buttons : {
+                "success" : {
+                    "label" : "<i class='icon-ok'></i> 保存",
+                    "className" : "btn-sm btn-success",
+                    "callback" : function() {
+                        var bookName = $("#bookName").val();
+                        var bookPrice = $("#bookPrice").val();
+                        var bookDate = $("#bookDate").val();
+                        $.ajax({
+                            url:'../book/addBook',
+                            type:'post',
+                            // data:$("#bookForm").serialize(),
+                            //dataType:'json',
+                            contentType:'application/json',
+                            data:JSON.stringify({
+                                'bookName':$("#bookName").val(),
+                                'bookPrice':$("#bookPrice").val(),
+                                'bookDate':$("#bookDate").val()
+                            }),
+                            success:function(){
+                                searchBook();
+                            }
+                        });
+                    }
+                },
+                "cancel" : {
+                    "label" : "<i class='icon-info'></i> 取消",
+                    "className" : "btn-sm btn-danger",
+                    "callback" : function() {
+
+                    }
+                }
+            }
+
+        });
+    }
+
+    //单删
+    function deleteBook(bookId) {
+        bootbox.confirm({
+            size:'small',
+            title:'提示',
+            message:'您确定要删除吗？',
+            callback:function(result){
+                if(result){
+                    $.ajax({
+                        url:'../book/deleteById/'+bookId,
+                        type:'delete',
+                        // data:{bookId:bookId},
+                        // dataType:'json',
+                        success:function(){
+                            searchBook();
+                        },error:function(){
+                            bootbox.alert({
+                                size:'small',
+                                title:'提示',
+                                message:'删除失败！',
+                                callback:function(){
+                                }
+                            });
+                        }
+                    })
+                }
+            }
+        })
+    }
+
+    //修改回显
+    function editUser(bookId) {
+        //打开修改页面
+        bootbox.dialog({
+            title: '修改用户',
+            message: createAddContent("../page/toAddBookPage"),
+            closeButton: true,//是否显示关闭按钮
+            buttons: {
+                "success": {
+                    "label": "<i class='icon-ok'></i> 保存",
+                    "className": "btn-sm btn-success",
+                    "callback": function () {
+                        $.ajax({
+                            url: '../book/updateBook',
+                            type: 'put',
+                            // data: $("#bookForm").serialize(),
+                            contentType:'application/json',
+                            data:JSON.stringify({
+                                'bookId':$("#bookId").val(),
+                                'bookName':$("#bookName").val(),
+                                'bookPrice':$("#bookPrice").val(),
+                                'bookDate':$("#bookDate").val()
+                            }),
+                            success: function () {
+                                //$('#myTable').bootstrapTable('refresh');
+                                //刷新表格
+                                searchBook();
+                            }
+                        });
+                    }
+                },
+                "cancel": {
+                    "label": "<i class='icon-info'></i> 取消",
+                    "className": "btn-sm btn-danger",
+                    "callback": function () {
+
+                    }
+                }
+            }
+
+        });
+
+        //回显数据
+        $.ajax({
+            url:'../book/findBookById/'+bookId,
+            type:'get',
+            /* data:{
+                 id:id
+             },*/
+            success:function(data){
+                $("#bookId").val(data.bookId);
+                $("#bookName").val(data.bookName);
+                $("#bookPrice").val(data.bookPrice);
+                /*$(":input[name='type']").each(function(){
+                    var val = $(this).val();
+                    if(val==data.type){
+                        $(this).prop("checked",true);
+                    }
+                })*/
+                $("#bookDate").val(data.bookDate);
+
+            }
+        })
+    }
+</script>
+</html>
